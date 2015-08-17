@@ -32,6 +32,7 @@ import com.android.systemui.qs.tiles.SoundTile
 import com.android.systemui.qs.tiles.SyncTile
 import com.android.systemui.qs.tiles.UsbTetherTile
 import com.android.systemui.qs.tiles.VpnTile
+import com.android.systemui.qs.tiles.VolumeTile
 import com.android.systemui.qs.tiles.base.shared.model.QSTileConfig
 import com.android.systemui.qs.tiles.base.shared.model.QSTileUIConfig
 import com.android.systemui.res.R
@@ -98,6 +99,12 @@ interface CustomModule {
     @StringKey(SoundTile.TILE_SPEC)
     fun bindSoundTile(soundTile: SoundTile): QSTileImpl<*>
 
+    /** Inject VolumeTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(VolumeTile.TILE_SPEC)
+    fun bindVolumeTile(volumeTile: VolumeTile): QSTileImpl<*>
+
     /** Inject SyncTile into tileMap in QSModule */
     @Binds
     @IntoMap
@@ -126,6 +133,7 @@ interface CustomModule {
         const val POWERSHARE_TILE_SPEC = "powershare"
         const val READING_MODE_TILE_SPEC = "reading_mode"
         const val SOUND_TILE_SPEC = "sound"
+        const val VOLUME_PANEL_TILE_SPEC = "volume_panel"
         const val SYNC_TILE_SPEC = "sync"
         const val USB_TETHER_TILE_SPEC = "usb_tether"
         const val VPN_TILE_SPEC = "vpn"
@@ -260,6 +268,21 @@ interface CustomModule {
                     QSTileUIConfig.Resource(
                         iconRes = R.drawable.ic_volume_ringer,
                         labelRes = R.string.quick_settings_sound_label
+                    ),
+                instanceId = uiEventLogger.getNewInstanceId(),
+                category = TileCategory.UTILITIES,
+            )
+
+        @Provides
+        @IntoMap
+        @StringKey(VOLUME_PANEL_TILE_SPEC)
+        fun provideVolumeTileConfig(uiEventLogger: QsEventLogger): QSTileConfig =
+            QSTileConfig(
+                tileSpec = TileSpec.create(VOLUME_PANEL_TILE_SPEC),
+                uiConfig =
+                    QSTileUIConfig.Resource(
+                        iconRes = R.drawable.ic_volume_system,
+                        labelRes = com.android.internal.R.string.volume_unknown
                     ),
                 instanceId = uiEventLogger.getNewInstanceId(),
                 category = TileCategory.UTILITIES,
