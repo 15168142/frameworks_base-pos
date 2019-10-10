@@ -607,6 +607,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mWakeOnDpadKeyPress;
     boolean mWakeOnAssistKeyPress;
     boolean mWakeOnBackKeyPress;
+    // Double-tap-to-doze
+    private boolean mDoubleTapToWake;
+    private boolean mDoubleTapToDoze;
+    private boolean mNativeDoubleTapToDozeAvailable;
     boolean mSilenceRingerOnSleepKey;
     long mWakeUpToLastStateTimeout;
     long mTurnOffTvToastSuppressionDelay;
@@ -887,6 +891,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.Secure.getUriFor(
                     Settings.Secure.WAKE_GESTURE_ENABLED), false, this,
+                    UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.DOZE_TRIGGER_DOUBLETAP), false, this,
                     UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.SCREEN_OFF_TIMEOUT), false, this,
@@ -2397,6 +2404,10 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mWakeOnBackKeyPress =
                 res.getBoolean(com.android.internal.R.bool.config_wakeOnBackKeyPress);
 
+        // Double-tap-to-doze
+        mNativeDoubleTapToDozeAvailable = !TextUtils.isEmpty(res.getString(
+                com.android.internal.R.string.config_dozeDoubleTapSensorType));
+
         // Init alert slider
         mHasAlertSlider = mContext.getResources().getBoolean(R.bool.config_hasAlertSlider)
                 && !TextUtils.isEmpty(mContext.getResources().getString(R.string.alert_slider_state_path))
@@ -3076,6 +3087,11 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         boolean updateRotation = false;
         boolean updateKidsModeSettings = false;
         final boolean kidsModeEnabled;
+        // Double-tap-to-doze
+        mDoubleTapToWake = Settings.Secure.getIntForUser(resolver,
+                Settings.Secure.DOUBLE_TAP_TO_WAKE, 0, UserHandle.USER_CURRENT) == 1;
+        mDoubleTapToDoze = Settings.Secure.getIntForUser(resolver,
+                Settings.Secure.DOZE_TRIGGER_DOUBLETAP, 0, UserHandle.USER_CURRENT) == 1;
         synchronized (mLock) {
             mEndcallBehavior = Settings.System.getIntForUser(resolver,
                     Settings.System.END_BUTTON_BEHAVIOR,
@@ -4985,7 +5001,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 notifyKeyGestureCompletedOnActionUp(event,
                         KeyGestureEvent.KEY_GESTURE_TYPE_WAKEUP);
                 result &= ~ACTION_PASS_TO_USER;
-                isWakeKey = true;
+                // Double-tap-to-doze
+                if (mDoubleTapToWake && mDoubleTapToDoze && !mNativeDoubleTapToDozeAvailable) {
+                    isWakeKey = false;
+                    if (!down) {
+                        mContext.sendBroadcast(new Intent("com.android.systemui.doze.pulse"));
+                    }
+                } else {
+                    isWakeKey = true;
+                }
                 break;
             }
 
