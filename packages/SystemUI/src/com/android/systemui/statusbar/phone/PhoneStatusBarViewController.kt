@@ -321,6 +321,10 @@ private constructor(
         darkIconDispatcher.removeDarkReceiver(clock)
     }
 
+    fun getPhoneStatusBarView(): PhoneStatusBarView {
+        return mView
+    }
+
     @Deprecated(
         "This touch handler will be unused once StatusBarEventForwardingModernization is enabled"
     )

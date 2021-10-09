@@ -39,6 +39,7 @@ import com.android.systemui.statusbar.phone.AutoHideController
 import com.android.systemui.statusbar.phone.CentralSurfaces
 import com.android.systemui.statusbar.phone.PhoneStatusBarTransitions
 import com.android.systemui.statusbar.phone.PhoneStatusBarViewController
+import com.android.systemui.statusbar.policy.BurnInProtectionController
 import com.android.systemui.statusbar.window.StatusBarWindowController
 import com.android.systemui.statusbar.window.data.repository.StatusBarWindowStatePerDisplayRepository
 import com.android.systemui.statusbar.window.shared.model.StatusBarWindowState
@@ -85,6 +86,7 @@ constructor(
     private val dumpManager: DumpManager,
     powerInteractor: PowerInteractor,
     primaryBouncerInteractor: PrimaryBouncerInteractor,
+    private val burnInProtectionController: BurnInProtectionController,
 ) : Dumpable {
 
     private val dumpableName: String =
@@ -213,6 +215,9 @@ constructor(
                     if (displayId != Display.DEFAULT_DISPLAY) {
                         return
                     }
+                    burnInProtectionController.setPhoneStatusBarView(
+                        statusBarViewController.getPhoneStatusBarView()
+                    )
                     // Ensure we re-propagate panel expansion values to the panel controller and
                     // any listeners it may have, such as PanelBar. This will also ensure we
                     // re-display the notification panel if necessary (for example, if
