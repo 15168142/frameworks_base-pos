@@ -28,6 +28,7 @@ import com.android.systemui.qs.tiles.DataSwitchTile
 import com.android.systemui.qs.tiles.HeadsUpTile
 import com.android.systemui.qs.tiles.PowerShareTile
 import com.android.systemui.qs.tiles.ReadingModeTile
+import com.android.systemui.qs.tiles.SoundTile
 import com.android.systemui.qs.tiles.SyncTile
 import com.android.systemui.qs.tiles.UsbTetherTile
 import com.android.systemui.qs.tiles.VpnTile
@@ -91,6 +92,12 @@ interface CustomModule {
     @StringKey(ReadingModeTile.TILE_SPEC)
     fun bindReadingModeTile(readingModeTile: ReadingModeTile): QSTileImpl<*>
 
+    /** Inject SoundTile into tileMap in QSModule */
+    @Binds
+    @IntoMap
+    @StringKey(SoundTile.TILE_SPEC)
+    fun bindSoundTile(soundTile: SoundTile): QSTileImpl<*>
+
     /** Inject SyncTile into tileMap in QSModule */
     @Binds
     @IntoMap
@@ -118,6 +125,7 @@ interface CustomModule {
         const val HEADS_UP_TILE_SPEC = "heads_up"
         const val POWERSHARE_TILE_SPEC = "powershare"
         const val READING_MODE_TILE_SPEC = "reading_mode"
+        const val SOUND_TILE_SPEC = "sound"
         const val SYNC_TILE_SPEC = "sync"
         const val USB_TETHER_TILE_SPEC = "usb_tether"
         const val VPN_TILE_SPEC = "vpn"
@@ -240,6 +248,21 @@ interface CustomModule {
                     ),
                 instanceId = uiEventLogger.getNewInstanceId(),
                 category = TileCategory.DISPLAY,
+            )
+
+        @Provides
+        @IntoMap
+        @StringKey(SOUND_TILE_SPEC)
+        fun provideSoundTileConfig(uiEventLogger: QsEventLogger): QSTileConfig =
+            QSTileConfig(
+                tileSpec = TileSpec.create(SOUND_TILE_SPEC),
+                uiConfig =
+                    QSTileUIConfig.Resource(
+                        iconRes = R.drawable.ic_volume_ringer,
+                        labelRes = R.string.quick_settings_sound_label
+                    ),
+                instanceId = uiEventLogger.getNewInstanceId(),
+                category = TileCategory.UTILITIES,
             )
 
         @Provides
