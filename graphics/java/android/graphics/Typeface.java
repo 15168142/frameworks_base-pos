@@ -27,8 +27,11 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.TestApi;
 import android.annotation.UiThread;
+import android.app.ActivityThread;
+import android.app.Application;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.graphics.fonts.Font;
 import android.graphics.fonts.FontFamily;
 import android.graphics.fonts.FontStyle;
@@ -56,6 +59,7 @@ import android.util.SparseArray;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.internal.util.android.FontController;
 import com.android.internal.util.Preconditions;
 import com.android.text.flags.Flags;
 
@@ -77,6 +81,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -178,7 +183,7 @@ public class Typeface {
      */
     @GuardedBy("SYSTEM_FONT_MAP_LOCK")
     @UnsupportedAppUsage(trackingBug = 123769347)
-    static final Map<String, Typeface> sSystemFontMap = new ArrayMap<>();
+    static final Map<String, Typeface> sSystemFontMap = new HashMap<>();
 
     // DirectByteBuffer object to hold sSystemFontMap's backing memory mapping.
     static ByteBuffer sSystemFontMapBuffer = null;
@@ -264,6 +269,21 @@ public class Typeface {
         }
     }
 
+    // Runtime re-point of an initialized placeholder (e.g. DEFAULT): the static final field
+    // can't be reassigned, so swap what the placeholder resolves to instead. If this instance
+    // is not (or is no longer) a placeholder — e.g. setSystemFontMap() took the non-Zygote
+    // fallback branch and force-replaced the static field with a concrete Typeface — there is
+    // nothing to repoint; the caller falls back to updating sSystemFontMap instead.
+    private boolean updatePendingTypeface(@NonNull Typeface resolvedTypeface) {
+        if (mPendingTypeface == null) {
+            Log.w(TAG, "updatePendingTypeface: " + this
+                    + " is not a placeholder Typeface, cannot repoint in place.");
+            return false;
+        }
+        mPendingTypeface.set(resolvedTypeface);
+        return true;
+    }
+
     /** @hide */
     @IntDef(value = {NORMAL, BOLD, ITALIC, BOLD_ITALIC})
     @Retention(RetentionPolicy.SOURCE)
@@ -290,6 +310,8 @@ public class Typeface {
      * @hide
      */
     public static final String DEFAULT_FAMILY = "sans-serif";
+
+    private static volatile String sFontName = DEFAULT_FAMILY;
 
     static {
         DEFAULT_BOLD = new Typeface(Typeface.BOLD, 700, null);
@@ -989,7 +1011,7 @@ public class Typeface {
      * @return The best matching typeface.
      */
     public static Typeface create(String familyName, @Style int style) {
-        return create(getSystemDefaultTypeface(familyName), style);
+        return create(getOverrideTypeface(familyName), style);
     }
 
     /**
@@ -1372,7 +1394,14 @@ public class Typeface {
         mCleaner.run();
     }
 
-    private static Typeface getSystemDefaultTypeface(@NonNull String familyName) {
+    /** @hide */
+    public static Typeface getOverrideTypeface(@NonNull String familyName) {
+        Typeface tf = FontController.getOverrideTypeface(familyName);
+        return tf == null ? getSystemDefaultTypeface(familyName) : tf;
+    }
+
+    /** @hide */
+    public static Typeface getSystemDefaultTypeface(@NonNull String familyName) {
         Typeface tf = sSystemFontMap.get(familyName);
         return tf == null ? Typeface.DEFAULT : tf;
     }
@@ -1574,6 +1603,57 @@ public class Typeface {
         // `Typeface.SANS_SERIF == Typeface.create("sans-serif", Typeface.NORMAL)`)
         // pass, replace the instance in the system font map with the pending Typeface.
         systemFontMap.put(familyName, pending);
+    }
+
+    /** @hide */
+    public static void changeFont() {
+        synchronized (sDynamicCacheLock) {
+            sDynamicTypefaceCache.evictAll();
+        }
+
+        String fontFamily = FontController.getCurrentFontFamily();
+
+        sFontName = fontFamily;
+
+        // Use FontController's fallback resolver to handle family-list
+        // entries (e.g. google-sans-flex) that may not register in
+        // sSystemFontMap by their list name, falling back through known
+        // aliases to Typeface.DEFAULT.
+        Typeface tf = FontController.resolveBaseTypeface();
+
+        Typeface tfBold = create(tf, BOLD);
+        Typeface tfItalic = create(tf, ITALIC);
+        Typeface tfItalicBold = create(tf, BOLD_ITALIC);
+
+        boolean repointed = DEFAULT.updatePendingTypeface(tf);
+        repointed &= DEFAULT_BOLD.updatePendingTypeface(tfBold);
+        repointed &= SANS_SERIF.updatePendingTypeface(tf);
+
+        if (!repointed) {
+            // DEFAULT/DEFAULT_BOLD/SANS_SERIF are concrete (non-placeholder) Typeface
+            // instances in this process — most likely because setSystemFontMap() took
+            // the non-Zygote fallback branch. We cannot mutate them in place; fall back
+            // to updating sSystemFontMap and sDefaultTypeface so subsequent lookups by
+            // name still resolve to the new font.
+            synchronized (SYSTEM_FONT_MAP_LOCK) {
+                sSystemFontMap.put(DEFAULT_FAMILY, tf);
+                sSystemFontMap.put("sans-serif", tf);
+                sSystemFontMap.put("sans-serif-bold", tfBold);
+                sDefaultTypeface = tf;
+            }
+            Log.w(TAG, "changeFont: DEFAULT typefaces are not placeholders in this "
+                    + "process; updated sSystemFontMap instead of repointing statics.");
+        }
+
+        changeDefaultFontForTest(
+                Arrays.asList(
+                        tf, tfBold, tfItalic, tfItalicBold),
+                Arrays.asList(tf, Typeface.SERIF, Typeface.MONOSPACE));
+    }
+
+    /** @hide */
+    public static String getFontName() {
+        return sFontName;
     }
 
     /** @hide */
