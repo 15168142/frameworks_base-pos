@@ -15,10 +15,13 @@
  */
 package com.android.systemui.globalactions;
 
+import static com.android.systemui.shared.system.BlurUtils.isVolumeAndPowerBlurEnabled;
+
 import android.annotation.NonNull;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,9 +61,23 @@ public class GlobalActionsPowerDialog {
         Window window = dialog.getWindow();
         window.setType(WindowManager.LayoutParams.TYPE_VOLUME_OVERLAY);
         window.setTitle(""); // prevent Talkback from speaking first item name twice
-        window.setBackgroundDrawable(res.getDrawable(
+
+        Drawable background = res.getDrawable(
                 com.android.systemui.res.R.drawable.global_actions_lite_background,
-                context.getTheme()));
+                context.getTheme());
+        WindowManager.LayoutParams attrs = window.getAttributes();
+
+        if (isVolumeAndPowerBlurEnabled()) {
+            attrs.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
+            attrs.setBlurBehindRadius(res.getDimensionPixelSize(
+                    com.android.systemui.res.R.dimen.global_actions_blur_radius));
+            background.mutate().setTint(context.getColor(
+                    com.android.systemui.res.R.color.global_actions_grid_background_blur));
+            listView.setBackground(null);
+        }
+
+        window.setBackgroundDrawable(background);
+        window.setAttributes(attrs);
         window.addFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM);
 
         return dialog;
