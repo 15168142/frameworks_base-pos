@@ -366,9 +366,13 @@ public abstract class ActivatableNotificationView extends ExpandableOutlineView 
         boolean usedTransparentBackground = usesTransparentBackground();
         mIsBlurSupported = isBlurSupported;
         if (usedTransparentBackground != usesTransparentBackground()) {
-            updateBackgroundTint();
-            mBackgroundNormal.setBlurBackgroundEnabled(usesBlurredBackground());
+            updateBackgroundState();
         }
+    }
+
+    protected void updateBackgroundState() {
+        updateBackgroundTint();
+        mBackgroundNormal.setBlurBackgroundEnabled(usesBlurredBackground());
     }
 
     protected boolean usesBlurredBackground() {
@@ -526,6 +530,8 @@ public abstract class ActivatableNotificationView extends ExpandableOutlineView 
                 }
                 if (mRunWithoutInterruptions) {
                     enableAppearDrawing(false);
+                } else {
+                    mBackgroundNormal.setBlurClipRect(null);
                 }
 
                 // We need to reset the View state, even if the animation was cancelled
@@ -659,6 +665,10 @@ public abstract class ActivatableNotificationView extends ExpandableOutlineView 
                         /* bottom= */ animatingHeight
                 );
             }
+        }
+
+        if (usesBlurredBackground()) {
+            mBackgroundNormal.setBlurClipRect(getOutlineRect());
         }
     }
 
@@ -797,6 +807,7 @@ public abstract class ActivatableNotificationView extends ExpandableOutlineView 
                 setContentAlpha(1.0f);
                 mAppearAnimationFraction = -1;
                 setOutlineRect(null);
+                mBackgroundNormal.setBlurClipRect(null);
             }
             invalidate();
         }
