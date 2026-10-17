@@ -276,7 +276,7 @@ public class PhoneStatusBarPolicy
         updateBluetooth();
 
         // Alarm clock
-        mIconController.setIcon(mSlotAlarmClock, R.drawable.stat_sys_alarm, null);
+        mIconController.setIcon(mSlotAlarmClock, R.drawable.ic_alarm, null);
         mIconController.setIconVisibility(mSlotAlarmClock, false);
 
         // zen
@@ -410,7 +410,7 @@ public class PhoneStatusBarPolicy
         int zen = mZenController.getZen();
         final boolean zenNone = zen == Global.ZEN_MODE_NO_INTERRUPTIONS;
         mIconController.setIcon(mSlotAlarmClock, zenNone ? R.drawable.stat_sys_alarm_dim
-                : R.drawable.stat_sys_alarm, buildAlarmContentDescription());
+                : R.drawable.ic_alarm, buildAlarmContentDescription());
         mIconController.setIconVisibility(mSlotAlarmClock, mCurrentUserSetup && hasAlarm);
     }
 
