@@ -49,6 +49,7 @@ import com.android.systemui.util.DrawableDumpKt;
 
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * A view that can be used for both the dimmed and normal background of an notification.
@@ -75,6 +76,7 @@ public class NotificationBackgroundView extends View implements Dumpable,
     private int mExpandAnimationWidth = -1;
     private int mExpandAnimationHeight = -1;
     private int mDrawableAlpha = 255;
+    @Nullable private Rect mBlurClipRect;
     private final ColorStateList mLightColoredStatefulColors;
     private final ColorStateList mDarkColoredStatefulColors;
     private int mNormalColor;
@@ -127,32 +129,10 @@ public class NotificationBackgroundView extends View implements Dumpable,
                         getActualHeight() - clipBottomAmount);
             }
 
-            if (!NotificationAddXOnHoverToDismiss.isEnabled()) {
-                if (mBackgroundBlurDrawable != null) {
-                    draw(canvas, mBackgroundBlurDrawable);
-                } else {
-                    draw(canvas, mBackground);
-                }
-                canvas.restore();
-                return;
-            }
-
-            Rect backgroundBounds = null;
-            if (mBackground != null || mBackgroundBlurDrawable != null
-                    || mDrawDismissButtonCutout) {
-                backgroundBounds = calculateBackgroundBounds();
-            }
-
-            if (mDrawDismissButtonCutout) {
+            Rect backgroundBounds = calculateBackgroundBounds();
+            if (mDrawDismissButtonCutout && NotificationAddXOnHoverToDismiss.isEnabled())
                 canvas.clipPath(calculateDismissButtonCutoutPath(backgroundBounds));
-            }
-            if (mBackgroundBlurDrawable != null) {
-                mBackgroundBlurDrawable.setBounds(backgroundBounds);
-                mBackgroundBlurDrawable.draw(canvas);
-            } else if (mBackground != null) {
-                mBackground.setBounds(backgroundBounds);
-                mBackground.draw(canvas);
-            }
+            drawBounds(canvas, backgroundBounds);
 
             canvas.restore();
         }
@@ -186,8 +166,6 @@ public class NotificationBackgroundView extends View implements Dumpable,
     }
 
     private Rect calculateBackgroundBounds() {
-        NotificationAddXOnHoverToDismiss.isUnexpectedlyInLegacyMode();
-
         int top = 0;
         int bottom = getActualHeight();
         if (mBottomIsRounded
@@ -211,6 +189,18 @@ public class NotificationBackgroundView extends View implements Dumpable,
         return new Rect(left, top, right, bottom);
     }
 
+    public void setBlurClipRect(@Nullable Rect rect) {
+        if (Objects.equals(rect, mBlurClipRect)) return;
+        if (rect == null) {
+            mBlurClipRect = null;
+        } else if (mBlurClipRect == null) {
+            mBlurClipRect = new Rect(rect);
+        } else {
+            mBlurClipRect.set(rect);
+        }
+        invalidate();
+    }
+
     /**
      * @return Whether the background view should be right-aligned. This only matters if the
      * actualWidth is different than the full (measured) width. In other words, this is used to
@@ -220,33 +210,14 @@ public class NotificationBackgroundView extends View implements Dumpable,
         return isLayoutRtl();
     }
 
-    private void draw(Canvas canvas, Drawable drawable) {
-        NotificationAddXOnHoverToDismiss.assertInLegacyMode();
-
-        if (drawable != null) {
-            int top = 0;
-            int bottom = getActualHeight();
-            if (mBottomIsRounded
-                    && mBottomAmountClips
-                    && !mExpandAnimationRunning) {
-                bottom -= Math.max(mClipBottomAmount, mBottomOverlap);
-            }
-
-            final boolean alignedToRight = isAlignedToRight();
-            final int width = getWidth();
-            final int actualWidth = getActualWidth();
-
-            int left = alignedToRight ? width - actualWidth : 0;
-            int right = alignedToRight ? width : actualWidth;
-
-            if (mExpandAnimationRunning) {
-                // Horizontally center this background view inside of the container
-                left = (int) ((width - actualWidth) / 2.0f);
-                right = (int) (left + actualWidth);
-            }
-            drawable.setBounds(left, top, right, bottom);
-            drawable.draw(canvas);
-        }
+    private void drawBounds(Canvas canvas, Rect bounds) {
+        Drawable drawable = mBackgroundBlurDrawable != null
+                ? mBackgroundBlurDrawable : mBackground;
+        if (drawable == null) return;
+        if (drawable == mBackgroundBlurDrawable && mBlurClipRect != null
+                && !bounds.intersect(mBlurClipRect)) bounds.setEmpty();
+        drawable.setBounds(bounds);
+        drawable.draw(canvas);
     }
 
     @Override
@@ -379,6 +350,7 @@ public class NotificationBackgroundView extends View implements Dumpable,
                 mBackgroundBlurDrawable.setCallback(null);
             }
             mBackgroundBlurDrawable = null;
+            mBlurClipRect = null;
         }
     }
 

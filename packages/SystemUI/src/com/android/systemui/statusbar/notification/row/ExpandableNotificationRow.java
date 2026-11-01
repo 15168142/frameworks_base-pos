@@ -961,8 +961,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
             mAboveShelfChangedListener.onAboveShelfStateChanged(!wasAboveShelf);
         }
         if (notificationRowTransparency()) {
-            updateBackgroundTint();
-            mBackgroundNormal.setBlurBackgroundEnabled(usesBlurredBackground());
+            updateBackgroundState();
         }
     }
 
@@ -1046,7 +1045,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         super.markHeadsUpSeen();
         mMustStayOnScreen = false;
         if (notificationRowTransparency()) {
-            updateBackgroundTint();
+            updateBackgroundState();
         }
     }
 
@@ -1315,7 +1314,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         }
 
         if (notificationRowTransparency()) {
-            updateBackgroundTint();
+            updateBackgroundState();
         }
         setChronometerRunning(mLastChronometerRunning);
         if (isAboveShelf() != wasAboveShelf) {
@@ -1872,7 +1871,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
             mAboveShelfChangedListener.onAboveShelfStateChanged(!wasAboveShelf);
         }
         if (notificationRowTransparency()) {
-            updateBackgroundTint();
+            updateBackgroundState();
         }
     }
 
@@ -3981,7 +3980,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
             for (int i = 0; i < notificationChildren.size(); i++) {
                 ExpandableNotificationRow child = notificationChildren.get(i);
                 if (notificationRowTransparency()) {
-                    child.updateBackgroundTint();
+                    child.updateBackgroundState();
                 }
                 child.updateBackgroundForGroupState();
             }
@@ -4713,8 +4712,7 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
         // Make our heads-up notifications transparent too!
         // Also, for an unpinned HUN on the unlocked shade, the row bg should be transparent.
         return super.usesTransparentBackground()
-                && (!mustStayOnScreen() || isHeadsUp())
-                && !(isChildInGroup() && !mNotificationParent.usesTransparentBackground())
-                && !mHeadsupDisappearRunning;
+                && (!mustStayOnScreen() || isHeadsUpState())
+                && !(isChildInGroup() && !mNotificationParent.usesTransparentBackground());
     }
 }
