@@ -33,6 +33,7 @@ import static java.util.stream.Collectors.joining;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
+import android.app.WindowConfiguration;
 import android.companion.virtualdevice.flags.Flags;
 import android.content.ComponentName;
 import android.content.Context;
@@ -172,6 +173,23 @@ public class EdgeBackGestureHandler {
             updateTopActivity();
         }
         @Override
+        public void onRecentTaskListFrozenChanged(boolean frozen) {
+            mTaskListFrozen = frozen;
+            if (!frozen) {
+                clearQuickstepRotation();
+            }
+        }
+        @Override
+        public void onTaskMovedToFront(ActivityManager.RunningTaskInfo taskInfo) {
+            if (taskInfo.displayId != mMainDisplayId
+                    || taskInfo.topActivityType == WindowConfiguration.ACTIVITY_TYPE_HOME
+                    || taskInfo.topActivityType == WindowConfiguration.ACTIVITY_TYPE_RECENTS
+                    || mTaskListFrozen) {
+                return;
+            }
+            clearQuickstepRotation();
+        }
+        @Override
         public void onTaskCreated(int taskId, ComponentName componentName) {
             if (componentName != null) {
                 mPackageName = componentName.getPackageName();
@@ -253,6 +271,7 @@ public class EdgeBackGestureHandler {
     // We temporarily disable back gesture when user is quickswitching
     // between apps of different orientations
     private boolean mDisabledForQuickstep;
+    private boolean mTaskListFrozen;
     // This gets updated when the value of PipTransitionState#isInPip changes.
     private boolean mIsInPip;
 
@@ -803,6 +822,7 @@ public class EdgeBackGestureHandler {
                 if (DEBUG_MISSING_GESTURE) {
                     Log.d(DEBUG_MISSING_GESTURE_TAG, "Register display listener");
                 }
+                mTaskListFrozen = false;
                 TaskStackChangeListeners.getInstance().registerTaskStackListener(
                         mTaskStackListener);
                 DeviceConfig.addOnPropertiesChangedListener(DeviceConfig.NAMESPACE_SYSTEMUI,
@@ -1284,6 +1304,12 @@ public class EdgeBackGestureHandler {
         int rotation = newConfig.windowConfiguration.getRotation();
         mDisabledForQuickstep = mStartingQuickstepRotation > -1 &&
                 mStartingQuickstepRotation != rotation;
+    }
+
+    // sometimes launcher doesnt know the task changed, leaving back gesture disabled
+    private void clearQuickstepRotation() {
+        mStartingQuickstepRotation = -1;
+        mDisabledForQuickstep = false;
     }
 
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
