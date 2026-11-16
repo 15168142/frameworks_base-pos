@@ -15,6 +15,7 @@
  */
 package com.android.systemui.globalactions;
 
+import static com.android.systemui.shared.system.BlurUtils.isBlurCurrentlyEnabled;
 import static com.android.systemui.shared.system.BlurUtils.isVolumeAndPowerBlurEnabled;
 
 import android.annotation.NonNull;
@@ -67,7 +68,7 @@ public class GlobalActionsPowerDialog {
                 context.getTheme());
         WindowManager.LayoutParams attrs = window.getAttributes();
 
-        if (isVolumeAndPowerBlurEnabled()) {
+        if (isVolumeAndPowerBlurEnabled() && isBlurCurrentlyEnabled()) {
             attrs.flags |= WindowManager.LayoutParams.FLAG_BLUR_BEHIND;
             attrs.setBlurBehindRadius(res.getDimensionPixelSize(
                     com.android.systemui.res.R.dimen.global_actions_blur_radius));

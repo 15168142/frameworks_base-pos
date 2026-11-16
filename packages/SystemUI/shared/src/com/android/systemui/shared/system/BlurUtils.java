@@ -23,6 +23,7 @@ import static com.android.systemui.Flags.blurOnMoreSurfaces;
 import android.app.ActivityManager;
 import android.content.res.Resources;
 import android.os.SystemProperties;
+import android.view.CrossWindowBlurListeners;
 
 public abstract class BlurUtils {
 
@@ -34,6 +35,14 @@ public abstract class BlurUtils {
     public static boolean supportsBlursOnWindows() {
         return CROSS_WINDOW_BLUR_SUPPORTED && ActivityManager.isHighEndGfx()
                 && !SystemProperties.getBoolean("persist.sysui.disableBlur", false);
+    }
+
+    /**
+     * whether blur is currently enabled
+     */
+    public static boolean isBlurCurrentlyEnabled() {
+        return supportsBlursOnWindows()
+                && CrossWindowBlurListeners.getInstance().isCrossWindowBlurEnabled();
     }
 
     public static boolean isVolumeAndPowerBlurEnabled() {
