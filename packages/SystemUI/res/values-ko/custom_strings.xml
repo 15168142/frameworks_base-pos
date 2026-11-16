@@ -20,4 +20,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Data disabled icon -->
     <string name="data_disabled_icon_title">데이터 비활성화 아이콘</string>
+    <!-- Sound QS tile -->
+    <string name="quick_settings_sound_label">소리</string>
 </resources>

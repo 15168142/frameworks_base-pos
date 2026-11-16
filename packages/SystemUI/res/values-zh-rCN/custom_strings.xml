@@ -20,4 +20,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Data disabled icon -->
     <string name="data_disabled_icon_title">数据已停用图标</string>
+    <!-- Sound QS tile -->
+    <string name="quick_settings_sound_label">声音</string>
 </resources>

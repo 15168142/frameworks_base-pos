@@ -20,4 +20,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <!-- Data disabled icon -->
     <string name="data_disabled_icon_title">Εικονίδιο απενεργοποιημένων δεδομένων</string>
+    <!-- Sound QS tile -->
+    <string name="quick_settings_sound_label">Ήχος</string>
 </resources>
