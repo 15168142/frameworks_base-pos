@@ -4715,4 +4715,10 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
                 && (!mustStayOnScreen() || isHeadsUpState())
                 && !(isChildInGroup() && !mNotificationParent.usesTransparentBackground());
     }
+
+    @Override
+    protected boolean usesBlurredBackground() {
+        // blur drawable replaces row background, so only HUNs may use it
+        return isHeadsUpState() && super.usesBlurredBackground();
+    }
 }
