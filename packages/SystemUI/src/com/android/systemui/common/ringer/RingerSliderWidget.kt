@@ -193,16 +193,16 @@ fun RingerSliderWidget(
                             isDndEnabled -> theme.dndBg
                             else -> theme.activeBg
                         },
-                        RoundedCornerShape(16.dp)
+                        CircleShape
                     )
                     .then(
                         when {
                             isDozing ->
-                            Modifier.border(theme.dozeStroke, Color.White, RoundedCornerShape(16.dp))
+                            Modifier.border(theme.dozeStroke, Color.White, CircleShape)
                             isDndEnabled ->
-                                Modifier.border(2.dp, theme.dndBg, RoundedCornerShape(16.dp))
+                                Modifier.border(2.dp, theme.dndBg, CircleShape)
                             else ->
-                                Modifier.border(2.dp, theme.activeBg, RoundedCornerShape(16.dp))
+                                Modifier.border(2.dp, theme.activeBg, CircleShape)
                         }
                     ),
                 contentAlignment = Alignment.Center
