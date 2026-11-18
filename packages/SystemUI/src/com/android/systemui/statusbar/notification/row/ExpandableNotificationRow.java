@@ -21,6 +21,7 @@ import static android.view.accessibility.AccessibilityEvent.CONTENT_CHANGE_TYPE_
 import static android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED;
 
 import static android.app.Flags.enableAutomationNotificationUi;
+import static com.android.systemui.Flags.lockscreenBlurForNotifications;
 import static com.android.systemui.Flags.notificationRowTransparency;
 import static com.android.systemui.statusbar.NotificationLockscreenUserManager.REDACTION_TYPE_NONE;
 import static com.android.systemui.statusbar.notification.NotificationUtils.logKey;
@@ -4710,15 +4711,14 @@ public class ExpandableNotificationRow extends ActivatableNotificationView
     @Override
     protected boolean usesTransparentBackground() {
         // Make our heads-up notifications transparent too!
-        // Also, for an unpinned HUN on the unlocked shade, the row bg should be transparent.
         return super.usesTransparentBackground()
-                && (!mustStayOnScreen() || isHeadsUpState())
+                && (!mustStayOnScreen() || (isHeadsUpState() && lockscreenBlurForNotifications()))
                 && !(isChildInGroup() && !mNotificationParent.usesTransparentBackground());
     }
 
     @Override
     protected boolean usesBlurredBackground() {
-        // blur drawable replaces row background, so only HUNs may use it
-        return isHeadsUpState() && super.usesBlurredBackground();
+        // blur drawable replaces row background, so only pinned/disappearing HUNs may use it
+        return (isPinned() || isHeadsUpAnimatingAway()) && super.usesBlurredBackground();
     }
 }

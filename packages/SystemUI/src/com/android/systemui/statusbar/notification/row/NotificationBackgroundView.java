@@ -324,7 +324,9 @@ public class NotificationBackgroundView extends View implements Dumpable,
                                 mBackgroundBlurDrawable.setXfermode(null);
                                 mBackgroundBlurDrawable.setCallback(
                                         NotificationBackgroundView.this);
-                                mBackgroundBlurDrawable.setColor(mNormalColor);
+                                mBackgroundBlurDrawable.setColor(
+                                        mTintColor != 0 ? mTintColor : mNormalColor);
+                                mBackgroundBlurDrawable.setAlpha(mDrawableAlpha);
 
                                 updateBackgroundRadii();
                                 invalidate();
@@ -347,10 +349,28 @@ public class NotificationBackgroundView extends View implements Dumpable,
                 mOnAttachStateChangeListener = null;
             }
             if (mBackgroundBlurDrawable != null) {
+                mBackgroundBlurDrawable.setVisible(false, false);
                 mBackgroundBlurDrawable.setCallback(null);
+                mBackgroundBlurDrawable = null;
+                invalidate();
             }
-            mBackgroundBlurDrawable = null;
             mBlurClipRect = null;
+        }
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (mBackgroundBlurDrawable != null) {
+            mBackgroundBlurDrawable.setVisible(true, false);
+        }
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        if (mBackgroundBlurDrawable != null) {
+            mBackgroundBlurDrawable.setVisible(false, false);
         }
     }
 

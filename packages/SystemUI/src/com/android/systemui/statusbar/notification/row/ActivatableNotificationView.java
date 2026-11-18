@@ -217,7 +217,6 @@ public abstract class ActivatableNotificationView extends ExpandableOutlineView 
      */
     protected void initBackground() {
         mBackgroundNormal.setCustomBackground(R.drawable.notification_material_bg);
-        mBackgroundNormal.setBlurBackgroundEnabled(usesBlurredBackground());
     }
 
     protected boolean hideBackground() {
