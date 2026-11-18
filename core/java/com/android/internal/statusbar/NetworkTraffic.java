@@ -108,8 +108,7 @@ public class NetworkTraffic extends TextView {
 
         final Resources resources = getResources();
         mTextSize = resources.getDimensionPixelSize(R.dimen.net_traffic_text_size);
-        setTypeface(Typeface.create(resources.getString(
-                com.android.internal.R.string.config_headlineFontFamily), Typeface.BOLD));
+        setTypeface(Typeface.create("variable-label-small-emphasized", Typeface.NORMAL));
 
         mNetworkTrafficIsVisible = false;
 
