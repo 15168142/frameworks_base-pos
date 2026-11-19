@@ -15,6 +15,7 @@
  */
 package com.android.systemui.common.ringer
 
+import android.media.AudioManager
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -29,7 +30,16 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import com.android.systemui.res.R
 import kotlin.math.roundToInt
 
 @Composable
@@ -49,6 +59,18 @@ fun RingerSliderWidget(
         initial = interactor.getTargetPosition(interactor.getCurrentMode())
     )
     val isDndEnabled by interactor.dndMode.collectAsState(initial = interactor.isDndEnabled())
+    val activeIndex = targetPosition.roundToInt().coerceIn(0, numModes - 1)
+    val tileLabel = stringResource(R.string.quick_settings_sound_label)
+    val stateLabel = stringResource(
+        when {
+            isDndEnabled -> R.string.quick_settings_dnd_label
+            availableModes[activeIndex].mode == AudioManager.RINGER_MODE_VIBRATE ->
+                R.string.volume_ringer_status_vibrate
+            availableModes[activeIndex].mode == AudioManager.RINGER_MODE_SILENT ->
+                R.string.volume_ringer_status_silent
+            else -> R.string.volume_ringer_status_normal
+        }
+    )
 
     var dragOffset by remember { mutableStateOf(targetPosition) }
     var isDragging by remember { mutableStateOf(false) }
@@ -69,6 +91,24 @@ fun RingerSliderWidget(
     Box(
         modifier = modifier
             .height(dimens.thumbSize)
+            .semantics(mergeDescendants = true) {
+                contentDescription = tileLabel
+                stateDescription = stateLabel
+                role = Role.Button
+                onClick {
+                    if (isDndEnabled) return@onClick false
+                    val nextIndex = (activeIndex + 1) % numModes
+                    dragOffset = nextIndex.toFloat()
+                    interactor.setRingerMode(availableModes[nextIndex].mode)
+                    true
+                }
+                if (onLongClick != null) {
+                    onLongClick {
+                        onLongClick.invoke()
+                        true
+                    }
+                }
+            }
             .background(
                 when {
                     isDozing -> Color.Transparent
@@ -180,7 +220,6 @@ fun RingerSliderWidget(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                val activeIndex = targetPosition.roundToInt().coerceIn(0, numModes - 1)
                 Icon(
                     imageVector = if (isDndEnabled) {
                         Icons.Filled.DoNotDisturb
