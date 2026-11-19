@@ -170,9 +170,12 @@ class HighBrightnessModeController {
 
     void setAutoBrightnessEnabled(int state) {
         final boolean isEnabled = state == AutomaticBrightnessController.AUTO_BRIGHTNESS_ENABLED;
-        mIsAutoBrightnessOffByState =
+        final boolean isOffByState =
                 state == AutomaticBrightnessController.AUTO_BRIGHTNESS_OFF_DUE_TO_DISPLAY_STATE;
-        if (isEnabled == mIsAutoBrightnessEnabled || !hbmControllerEnabled()) {
+        final boolean offByStateChanged = isOffByState != mIsAutoBrightnessOffByState;
+        mIsAutoBrightnessOffByState = isOffByState;
+        if ((isEnabled == mIsAutoBrightnessEnabled && !offByStateChanged)
+                || !hbmControllerEnabled()) {
             return;
         }
         if (DEBUG) {
@@ -258,7 +261,8 @@ class HighBrightnessModeController {
         final long runningStartTime = mHighBrightnessModeMetadata.getRunningStartTimeMillis();
         final boolean wasHbmDrainingAvailableTime = runningStartTime != -1;
         final boolean shouldHbmDrainAvailableTime = mBrightness > mHbmData.transitionPoint
-                && !mIsHdrLayerPresent;
+                && !mIsHdrLayerPresent
+                && mHbmData.timeWindowMillis > 0;
         if (wasHbmDrainingAvailableTime != shouldHbmDrainAvailableTime) {
             final long currentTime = mClock.uptimeMillis();
             if (shouldHbmDrainAvailableTime) {
@@ -403,7 +407,8 @@ class HighBrightnessModeController {
         }
         return !mIsHdrLayerPresent
                 && ((mIsAutoBrightnessEnabled && mIsTimeAvailable && mIsInAllowedAmbientRange)
-                    || (!mIsAutoBrightnessEnabled && mHbmData.timeWindowMillis == 0))
+                    || (!mIsAutoBrightnessEnabled && !mIsAutoBrightnessOffByState
+                        && mHbmData.timeWindowMillis == 0))
                 && !mIsBlockedByLowPowerMode;
     }
 
@@ -487,6 +492,12 @@ class HighBrightnessModeController {
      * Recalculates the allowable HBM time.
      */
     private void recalculateTimeAllowance() {
+        if (mHbmData.timeWindowMillis == 0) {
+            mIsTimeAvailable = true;
+            mHandler.removeCallbacks(mRecalcRunnable);
+            updateHbmMode();
+            return;
+        }
         final long currentTime = mClock.uptimeMillis();
         final long remainingTime = calculateRemainingTime(currentTime);
 
