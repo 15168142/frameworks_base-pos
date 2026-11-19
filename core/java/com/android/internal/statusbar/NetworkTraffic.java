@@ -108,7 +108,8 @@ public class NetworkTraffic extends TextView {
 
         final Resources resources = getResources();
         mTextSize = resources.getDimensionPixelSize(R.dimen.net_traffic_text_size);
-        setTypeface(Typeface.create("variable-label-small-emphasized", Typeface.NORMAL));
+        setTypeface(Typeface.create(
+                Typeface.create("variable-label-small-emphasized", Typeface.NORMAL), 700, false));
 
         mNetworkTrafficIsVisible = false;
 
