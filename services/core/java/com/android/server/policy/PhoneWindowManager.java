@@ -608,8 +608,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mWakeOnAssistKeyPress;
     boolean mWakeOnBackKeyPress;
     // Double-tap-to-doze
-    private boolean mDoubleTapToWake;
-    private boolean mDoubleTapToDoze;
+    private volatile boolean mDoubleTapToWake;
+    private volatile boolean mDoubleTapToDoze;
     private boolean mNativeDoubleTapToDozeAvailable;
     boolean mSilenceRingerOnSleepKey;
     long mWakeUpToLastStateTimeout;
@@ -759,6 +759,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private static final int MSG_SWITCH_KEYBOARD_LAYOUT = 25;
     private static final int MSG_SET_DEFERRED_KEY_ACTIONS_EXECUTABLE = 27;
     private static final int MSG_DISPATCH_VOLKEY_WITH_WAKE_LOCK = 28;
+    private static final int MSG_PULSE_DOZE_WITH_WAKE_LOCK = 29;
 
     private boolean mHasAlertSlider = false;
 
@@ -857,6 +858,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     dispatchMediaKeyWithWakeLockToAudioService(volEvent);
                     dispatchMediaKeyWithWakeLockToAudioService(
                             KeyEvent.changeAction(volEvent, KeyEvent.ACTION_UP));
+                    break;
+                case MSG_PULSE_DOZE_WITH_WAKE_LOCK:
+                    pulseDozeWithWakeLock();
                     break;
             }
         }
@@ -5005,10 +5009,15 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         KeyGestureEvent.KEY_GESTURE_TYPE_WAKEUP);
                 result &= ~ACTION_PASS_TO_USER;
                 // Double-tap-to-doze
-                if (mDoubleTapToWake && mDoubleTapToDoze && !mNativeDoubleTapToDozeAvailable) {
+                if (!interactive && mDoubleTapToWake && mDoubleTapToDoze
+                        && !mNativeDoubleTapToDozeAvailable) {
                     isWakeKey = false;
+                    mPendingWakeKey = PENDING_KEY_NULL;
                     if (!down) {
-                        mContext.sendBroadcast(new Intent("com.android.systemui.doze.pulse"));
+                        mBroadcastWakeLock.acquire();
+                        Message msg = mHandler.obtainMessage(MSG_PULSE_DOZE_WITH_WAKE_LOCK);
+                        msg.setAsynchronous(true);
+                        msg.sendToTarget();
                     }
                 } else {
                     isWakeKey = true;
@@ -5500,6 +5509,17 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         }
         startActivityAsUser(voiceIntent, UserHandle.CURRENT_OR_SELF);
         mBroadcastWakeLock.release();
+    }
+
+    private void pulseDozeWithWakeLock() {
+        try {
+            final Intent intent = new Intent("com.android.systemui.doze.pulse")
+                    .setPackage("com.android.systemui")
+                    .addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+            mContext.sendBroadcast(intent);
+        } finally {
+            mBroadcastWakeLock.release();
+        }
     }
 
     BroadcastReceiver mDockReceiver = new BroadcastReceiver() {
