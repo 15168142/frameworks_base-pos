@@ -23,6 +23,7 @@ import android.content.res.Resources
 import android.os.Trace
 import android.service.quicksettings.Tile.STATE_ACTIVE
 import android.service.quicksettings.Tile.STATE_INACTIVE
+import android.view.HapticFeedbackConstants
 import androidx.annotation.VisibleForTesting
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -59,6 +60,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -189,6 +191,7 @@ fun ContentScope.Tile(
         val isDualTarget = uiState.handlesToggleClick
         val hasLongClickEffect = uiState.hasLongClickEffect
         val interactionSource = remember { MutableInteractionSource() }
+        val view = LocalView.current
 
         val surfaceRevealModifier: Modifier
         val contentRevealModifier: Modifier
@@ -297,6 +300,9 @@ fun ContentScope.Tile(
                             }
 
                             // Side effects of the click
+                            if (tile.spec.spec == "sound") {
+                                view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                            }
                             hapticsViewModel.setTileInteractionState(
                                 TileHapticsViewModel.TileInteractionState.CLICKED
                             )
