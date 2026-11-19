@@ -104,14 +104,14 @@ fun RingerSliderWidget(
                     }
                 }
             }
+            .clip(CircleShape)
             .background(
                 if (isDozing) Color.Transparent else theme.neutralBg,
-                RoundedCornerShape(24.dp)
+                CircleShape
             )
-            .clip(RoundedCornerShape(24.dp))
             .then(
                 if (isDozing)
-                    Modifier.border(theme.dozeStroke, Color.White, RoundedCornerShape(24.dp))
+                    Modifier.border(theme.dozeStroke, Color.White, CircleShape)
                 else border
             )
             .pointerInput(interactor, onLongClick) {
