@@ -42,7 +42,6 @@ interface RingerSliderTheme {
 }
 
 interface RingerSliderDimens {
-    val totalWidth: Dp?
     val thumbSize: Dp
     val iconSize: Dp
     val thumbPadding: Dp

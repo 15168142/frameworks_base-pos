@@ -50,7 +50,6 @@ class QSTileRingerTheme(
 class QSTileRingerDimens(
     private val tileHeight: Dp
 ) : RingerSliderDimens {
-    override val totalWidth: Dp? = null
     override val thumbSize: Dp = tileHeight
     override val iconSize: Dp = 24.dp
     override val thumbPadding: Dp = 8.dp

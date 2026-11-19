@@ -29,6 +29,7 @@ import com.android.systemui.qs.panels.ui.compose.infinitegrid.CommonTileDefaults
 
 @Composable
 fun QSTileRingerSlider(
+    modifier: Modifier = Modifier,
     border: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -43,7 +44,7 @@ fun QSTileRingerSlider(
         interactor = interactor,
         theme = QSTileRingerTheme(),
         dimens = QSTileRingerDimens(TileHeight),
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         isDozing = false,
         border = border,
         onLongClick = {

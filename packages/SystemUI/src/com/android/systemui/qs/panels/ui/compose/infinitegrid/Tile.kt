@@ -177,7 +177,9 @@ fun ContentScope.Tile(
             }
 
         if (tile.spec.spec == "sound" && !iconOnly) {
-            QSTileRingerSlider()
+            QSTileRingerSlider(
+                modifier = modifier.verticalSquish(squishiness)
+            )
             return@trace
         }
 
