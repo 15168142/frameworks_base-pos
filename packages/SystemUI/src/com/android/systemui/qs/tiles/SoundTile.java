@@ -24,6 +24,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.Vibrator;
 import android.service.quicksettings.Tile;
 
 import androidx.annotation.Nullable;
@@ -52,6 +53,7 @@ public class SoundTile extends QSTileImpl<BooleanState> {
 
     private final AudioManager mAudioManager;
     private final BroadcastDispatcher mBroadcastDispatcher;
+    private final boolean mHasVibrator;
 
     private boolean mListening;
 
@@ -72,6 +74,8 @@ public class SoundTile extends QSTileImpl<BooleanState> {
                 statusBarStateController, activityStarter, qsLogger);
         mAudioManager = mContext.getSystemService(AudioManager.class);
         mBroadcastDispatcher = broadcastDispatcher;
+        Vibrator vibrator = mContext.getSystemService(Vibrator.class);
+        mHasVibrator = vibrator != null && vibrator.hasVibrator();
     }
 
     @Override
@@ -97,7 +101,9 @@ public class SoundTile extends QSTileImpl<BooleanState> {
     protected void handleClick(@Nullable Expandable expandable) {
         switch (mAudioManager.getRingerModeInternal()) {
             case AudioManager.RINGER_MODE_NORMAL:
-                mAudioManager.setRingerModeInternal(AudioManager.RINGER_MODE_VIBRATE);
+                mAudioManager.setRingerModeInternal(mHasVibrator
+                        ? AudioManager.RINGER_MODE_VIBRATE
+                        : AudioManager.RINGER_MODE_SILENT);
                 break;
             case AudioManager.RINGER_MODE_VIBRATE:
                 mAudioManager.setRingerModeInternal(AudioManager.RINGER_MODE_SILENT);
