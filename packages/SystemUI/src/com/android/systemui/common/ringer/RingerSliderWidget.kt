@@ -16,6 +16,7 @@
 package com.android.systemui.common.ringer
 
 import android.media.AudioManager
+import android.view.HapticFeedbackConstants
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -68,6 +70,7 @@ fun RingerSliderWidget(
         }
     )
 
+    val view = LocalView.current
     var dragOffset by remember { mutableStateOf(targetPosition) }
     var isDragging by remember { mutableStateOf(false) }
 
@@ -95,10 +98,12 @@ fun RingerSliderWidget(
                     val nextIndex = (activeIndex + 1) % numModes
                     dragOffset = nextIndex.toFloat()
                     interactor.setRingerMode(availableModes[nextIndex].mode)
+                    view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
                     true
                 }
                 if (onLongClick != null) {
                     onLongClick {
+                        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
                         onLongClick.invoke()
                         true
                     }
@@ -114,24 +119,35 @@ fun RingerSliderWidget(
                     Modifier.border(theme.dozeStroke, Color.White, CircleShape)
                 else border
             )
-            .pointerInput(interactor, onLongClick) {
+            .pointerInput(interactor, onLongClick, view) {
                 detectTapGestures(
                     onTap = { tapOffset ->
                         if (size.width <= 0) return@detectTapGestures
                         val sectionWidth = size.width / numModes.toFloat()
                         val snappedIndex = (tapOffset.x / sectionWidth).toInt()
                             .coerceIn(0, numModes - 1)
+                        val nextMode = availableModes[snappedIndex].mode
+                        if (nextMode != interactor.getCurrentMode()) {
+                            view.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                        }
                         dragOffset = snappedIndex.toFloat()
-                        interactor.setRingerMode(availableModes[snappedIndex].mode)
+                        interactor.setRingerMode(nextMode)
                     },
                     onLongPress = {
-                        onLongClick?.invoke()
+                        if (onLongClick != null) {
+                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            onLongClick.invoke()
+                        }
                     }
                 )
             }
-            .pointerInput(interactor) {
+            .pointerInput(interactor, view) {
+                var lastHapticIndex = dragOffset.roundToInt().coerceIn(0, numModes - 1)
                 detectHorizontalDragGestures(
-                    onDragStart = { isDragging = true },
+                    onDragStart = {
+                        isDragging = true
+                        lastHapticIndex = dragOffset.roundToInt().coerceIn(0, numModes - 1)
+                    },
                     onDragEnd = {
                         isDragging = false
                         interactor.setRingerMode(interactor.snapMode(dragOffset))
@@ -146,6 +162,11 @@ fun RingerSliderWidget(
                     val pixelPerUnit = trackWidth / maxOffset
                     dragOffset = (dragOffset + (dragAmount / pixelPerUnit))
                         .coerceIn(0f, maxOffset)
+                    val newIndex = dragOffset.roundToInt().coerceIn(0, numModes - 1)
+                    if (newIndex != lastHapticIndex) {
+                        lastHapticIndex = newIndex
+                        view.performHapticFeedback(HapticFeedbackConstants.SEGMENT_TICK)
+                    }
                 }
             },
         contentAlignment = Alignment.CenterStart
