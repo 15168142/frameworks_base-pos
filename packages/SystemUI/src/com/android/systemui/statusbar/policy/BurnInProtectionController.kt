@@ -32,12 +32,10 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-private const val BURN_IN_PREVENTION_PERIOD = 83f
 private const val UPDATE_INTERVAL = 1000 * 10L
 
 private val TAG = BurnInProtectionController::class.simpleName
@@ -63,7 +61,7 @@ class BurnInProtectionController @Inject constructor(
 
     init {
         logD {
-            "shiftEnabled = $shiftEnabled}"
+            "shiftEnabled = $shiftEnabled"
         }
         configurationController.addCallback(this)
         loadResources()
@@ -91,8 +89,8 @@ class BurnInProtectionController @Inject constructor(
         shiftJob = coroutineScope.launch {
             while (isActive) {
                 val sbOffset = Offset(
-                    getBurnInOffsetX(maxStatusBarOffsetX),
-                    getBurnInOffsetY(maxStatusBarOffsetY)
+                    centeredBurnInOffset(maxStatusBarOffsetX, xAxis = true),
+                    centeredBurnInOffset(maxStatusBarOffsetY, xAxis = false)
                 )
                 logD {
                     "new offsets: sbOffset = $sbOffset"
@@ -121,13 +119,9 @@ class BurnInProtectionController @Inject constructor(
         logD {
             "Cancelling shift job"
         }
-        coroutineScope.launch {
-            shiftJob?.cancelAndJoin()
-            updateViews(Offset.Zero)
-            logD {
-                "Cancelled shift job"
-            }
-        }
+        shiftJob?.cancel()
+        shiftJob = null
+        updateViews(Offset.Zero)
     }
 
     override fun onDensityOrFontScaleChanged() {
@@ -138,21 +132,10 @@ class BurnInProtectionController @Inject constructor(
     }
 }
 
-private fun getBurnInOffsetX(maxOffset: Int): Int {
+private fun centeredBurnInOffset(maxOffset: Int, xAxis: Boolean): Int {
     return maxOffset - getBurnInOffset(
         amplitude = maxOffset * 2,
-        xAxis = true,
-        periodX = BURN_IN_PREVENTION_PERIOD,
-        periodY = BURN_IN_PREVENTION_PERIOD
-    )
-}
-
-private fun getBurnInOffsetY(maxOffset: Int): Int {
-    return maxOffset - getBurnInOffset(
-        amplitude = maxOffset * 2,
-        xAxis = false,
-        periodX = BURN_IN_PREVENTION_PERIOD,
-        periodY = BURN_IN_PREVENTION_PERIOD
+        xAxis = xAxis
     )
 }
 
