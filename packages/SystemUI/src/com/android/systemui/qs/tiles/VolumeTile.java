@@ -37,6 +37,7 @@ import com.android.systemui.qs.QsEventLogger;
 import com.android.systemui.qs.QSHost;
 import com.android.systemui.qs.logging.QSLogger;
 import com.android.systemui.qs.tileimpl.QSTileImpl;
+import com.android.systemui.res.R;
 import com.android.systemui.volume.domain.model.VolumePanelRoute;
 import com.android.systemui.volume.ui.navigation.VolumeNavigator;
 
@@ -101,8 +102,8 @@ public class VolumeTile extends QSTileImpl<BooleanState> {
 
     @Override
     public BooleanState newTileState() {
-        return new BooleanState().apply {
-            handlesLongClick = false;
-        };
+        BooleanState state = new BooleanState();
+        state.handlesLongClick = false;
+        return state;
     }
 }
