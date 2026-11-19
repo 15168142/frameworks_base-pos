@@ -85,14 +85,14 @@ public class VolumeTile extends QSTileImpl<BooleanState> {
 
     @Override
     protected void handleUpdateState(BooleanState state, Object arg) {
-        state.label = mContext.getString(com.android.internal.R.string.volume_unknown);
+        state.label = mContext.getString(R.string.media_output_dialog_accessibility_seekbar);
         state.icon = maybeLoadResourceIcon(R.drawable.ic_volume_system);
         state.state = Tile.STATE_ACTIVE;
     }
 
     @Override
     public CharSequence getTileLabel() {
-        return mContext.getString(com.android.internal.R.string.volume_unknown);
+        return mContext.getString(R.string.media_output_dialog_accessibility_seekbar);
     }
 
     @Override

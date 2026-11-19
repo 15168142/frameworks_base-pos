@@ -282,7 +282,7 @@ interface CustomModule {
                 uiConfig =
                     QSTileUIConfig.Resource(
                         iconRes = R.drawable.ic_volume_system,
-                        labelRes = com.android.internal.R.string.volume_unknown
+                        labelRes = R.string.media_output_dialog_accessibility_seekbar
                     ),
                 instanceId = uiEventLogger.getNewInstanceId(),
                 category = TileCategory.UTILITIES,
