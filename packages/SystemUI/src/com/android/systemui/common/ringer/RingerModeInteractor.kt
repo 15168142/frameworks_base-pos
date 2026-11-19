@@ -34,7 +34,6 @@ import kotlin.math.roundToInt
 interface RingerModeInteractor {
     val ringerMode: Flow<Int>
     val targetPositionFlow: Flow<Float>
-    val dndMode: Flow<Boolean>
     fun isDndEnabled(): Boolean
     fun toggleDnd()
 
@@ -76,25 +75,6 @@ class RingerModeInteractorImpl(
         val filter = IntentFilter(AudioManager.INTERNAL_RINGER_MODE_CHANGED_ACTION)
         context.registerReceiver(receiver, filter)
         awaitClose { context.unregisterReceiver(receiver) }
-    }.distinctUntilChanged()
-
-    override val dndMode: Flow<Boolean> = callbackFlow {
-        trySend(isDndEnabled())
-
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED) {
-                    trySend(isDndEnabled())
-                }
-            }
-        }
-
-        val filter = IntentFilter(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
-        context.registerReceiver(receiver, filter)
-
-        awaitClose {
-            context.unregisterReceiver(receiver)
-        }
     }.distinctUntilChanged()
 
     override fun getCurrentMode(): Int = audioManager.ringerModeInternal

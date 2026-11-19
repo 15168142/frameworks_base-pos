@@ -58,16 +58,12 @@ fun RingerSliderWidget(
     val targetPosition by interactor.targetPositionFlow.collectAsState(
         initial = interactor.getTargetPosition(interactor.getCurrentMode())
     )
-    val isDndEnabled by interactor.dndMode.collectAsState(initial = interactor.isDndEnabled())
     val activeIndex = targetPosition.roundToInt().coerceIn(0, numModes - 1)
     val tileLabel = stringResource(R.string.quick_settings_sound_label)
     val stateLabel = stringResource(
-        when {
-            isDndEnabled -> R.string.quick_settings_dnd_label
-            availableModes[activeIndex].mode == AudioManager.RINGER_MODE_VIBRATE ->
-                R.string.volume_ringer_status_vibrate
-            availableModes[activeIndex].mode == AudioManager.RINGER_MODE_SILENT ->
-                R.string.volume_ringer_status_silent
+        when (availableModes[activeIndex].mode) {
+            AudioManager.RINGER_MODE_VIBRATE -> R.string.volume_ringer_status_vibrate
+            AudioManager.RINGER_MODE_SILENT -> R.string.volume_ringer_status_silent
             else -> R.string.volume_ringer_status_normal
         }
     )
@@ -96,7 +92,6 @@ fun RingerSliderWidget(
                 stateDescription = stateLabel
                 role = Role.Button
                 onClick {
-                    if (isDndEnabled) return@onClick false
                     val nextIndex = (activeIndex + 1) % numModes
                     dragOffset = nextIndex.toFloat()
                     interactor.setRingerMode(availableModes[nextIndex].mode)
@@ -110,11 +105,7 @@ fun RingerSliderWidget(
                 }
             }
             .background(
-                when {
-                    isDozing -> Color.Transparent
-                    isDndEnabled -> theme.dndBg
-                    else -> theme.neutralBg
-                },
+                if (isDozing) Color.Transparent else theme.neutralBg,
                 RoundedCornerShape(24.dp)
             )
             .clip(RoundedCornerShape(24.dp))
@@ -126,7 +117,7 @@ fun RingerSliderWidget(
             .pointerInput(interactor, onLongClick) {
                 detectTapGestures(
                     onTap = { tapOffset ->
-                        if (isDndEnabled || size.width <= 0) return@detectTapGestures
+                        if (size.width <= 0) return@detectTapGestures
                         val sectionWidth = size.width / numModes.toFloat()
                         val snappedIndex = (tapOffset.x / sectionWidth).toInt()
                             .coerceIn(0, numModes - 1)
@@ -143,16 +134,13 @@ fun RingerSliderWidget(
                     onDragStart = { isDragging = true },
                     onDragEnd = {
                         isDragging = false
-                        if (!isDndEnabled) {
-                            interactor.setRingerMode(interactor.snapMode(dragOffset))
-                        }
+                        interactor.setRingerMode(interactor.snapMode(dragOffset))
                     },
                     onDragCancel = {
                         isDragging = false
                     }
                 ) { change, dragAmount ->
                     change.consume()
-                    if (isDndEnabled) return@detectHorizontalDragGestures
                     val trackWidth = size.width - dimens.thumbSize.toPx()
                     if (trackWidth <= 0f) return@detectHorizontalDragGestures
                     val pixelPerUnit = trackWidth / maxOffset
@@ -179,7 +167,7 @@ fun RingerSliderWidget(
                         .size(dimens.dotSize)
                         .graphicsLayer { alpha = dotAlpha }
                         .background(
-                            if (isDozing) Color.White else if (isDndEnabled) theme.dndIcon else theme.neutralIcon,
+                            if (isDozing) Color.White else theme.neutralIcon,
                             RoundedCornerShape(50)
                         )
                 )
@@ -189,11 +177,7 @@ fun RingerSliderWidget(
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val totalWidth = maxWidth
             val step = if (numModes > 1) (totalWidth - dimens.thumbSize) / (numModes - 1) else 0.dp
-            val thumbOffset = if (isDndEnabled) {
-                (totalWidth - dimens.thumbSize) / 2f
-            } else {
-                step * animatedPosition
-            }
+            val thumbOffset = step * animatedPosition
 
             Box(
                 modifier = Modifier
@@ -201,37 +185,21 @@ fun RingerSliderWidget(
                     .size(dimens.thumbSize)
                     .padding(dimens.thumbPadding)
                     .background(
-                        when {
-                            isDozing -> Color.Transparent
-                            isDndEnabled -> theme.dndBg
-                            else -> theme.activeBg
-                        },
+                        if (isDozing) Color.Transparent else theme.activeBg,
                         CircleShape
                     )
                     .then(
-                        when {
-                            isDozing ->
+                        if (isDozing)
                             Modifier.border(theme.dozeStroke, Color.White, CircleShape)
-                            isDndEnabled ->
-                                Modifier.border(2.dp, theme.dndBg, CircleShape)
-                            else ->
-                                Modifier.border(2.dp, theme.activeBg, CircleShape)
-                        }
+                        else
+                            Modifier.border(2.dp, theme.activeBg, CircleShape)
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (isDndEnabled) {
-                        Icons.Filled.DoNotDisturb
-                    } else {
-                        availableModes[activeIndex].icon
-                    },
+                    imageVector = availableModes[activeIndex].icon,
                     contentDescription = null,
-                    tint = when {
-                        isDozing -> Color.White
-                        isDndEnabled -> theme.dndIcon
-                        else -> theme.activeIcon
-                    },
+                    tint = if (isDozing) Color.White else theme.activeIcon,
                     modifier = Modifier.size(dimens.iconSize)
                 )
             }
